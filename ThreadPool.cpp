@@ -18,6 +18,8 @@
 #include<string.h>
 #include<string>
 #include<iostream>
+#include <unistd.h>
+
 using namespace std;
 
 ThreadPool::ThreadPool(int minNumThreads_, int maxNumThreads_)
@@ -99,15 +101,75 @@ ThreadPool::ThreadPool(int minNumThreads_, int maxNumThreads_)
 
 void *ThreadPool::manager(void *arg)
 {
+    ThreadPool *pool = static_cast<ThreadPool *>(arg)  ;
 
+    while (!pool->shutdownThreadPool)
+    {
+
+        //每隔3秒检测一次
+        sleep(3);
+
+        // 取出线程池中任务的数量和当前线程的数量
+        pthread_mutex_lock(&pool->mutexPool);
+        int queueSize = pool->taskQ->getTaskNumber();
+        int liveNum = pool->liveNumThreads;
+        int maxNumThreads=pool->maxNumThreads;
+        int minNumThreads=pool->minNumThreads;
+        pthread_mutex_unlock(&pool->mutexPool);
+
+        // 取出忙的线程的数量
+        pthread_mutex_lock(&pool->mutexBusy);
+        int busyNum = pool->busyNumThreads;
+        pthread_mutex_unlock(&pool->mutexBusy);
+
+        // 添加线程算法
+        // 任务的个数>存活的线程个数 && 存活的线程数< 最大线程数
+        if (queueSize > liveNum && liveNum < maxNumThreads)
+        {
+            pthread_mutex_lock(&pool->mutexPool);
+            int counter = 0;
+            for (int i = 0; i < maxNumThreads && counter < NUMBER && liveNum < maxNumThreads; i++)
+            {
+                if (pool->threadIDs[i] == 0)  // 找到空位 即 数组中空闲的位置
+                {
+                    pthread_create(& pool->threadIDs[i], NULL, worker, pool);
+                    counter++;
+                    pool->liveNumThreads++;
+                }
+            }
+            pthread_mutex_unlock(&pool->mutexPool);
+
+
+        }
+
+        // 销毁线程算法
+        // 忙的线程*2 < 存活的线程个数 && 存活的线程 > 最小线程数
+        if (busyNum * 2 < liveNum && liveNum > minNumThreads)
+        {
+            pthread_mutex_lock(&pool->mutexPool);
+
+            pool->destroyNumThreads = NUMBER;
+            pthread_mutex_unlock(&pool->mutexPool);
+
+            // 让工作的线程自杀
+            for (int i = 0; i < NUMBER; i++)
+            {
+                pthread_cond_signal(&pool->notEmpty);  // 唤醒阻塞在条件变量的线程
+            }
+
+
+        }
+
+
+    }
 
 
     return nullptr;
 }
 
-void *ThreadPool::worker(void *arg)
+[[noreturn]] void *ThreadPool::worker(void *arg)
 {
-    ThreadPool *pool = static_cast<ThreadPool *>(arg) ;
+    ThreadPool *pool = static_cast<ThreadPool *>(arg);
 
     while (true)
     {
@@ -139,7 +201,7 @@ void *ThreadPool::worker(void *arg)
                     pthread_mutex_unlock(&pool->mutexPool);
 
                     //   pthread_exit(NULL);
-                   pool-> threadExit( );  // 销毁当前线程
+                    pool->threadExit();  // 销毁当前线程
                 }
 
 
@@ -153,42 +215,102 @@ void *ThreadPool::worker(void *arg)
             pthread_mutex_unlock(&pool->mutexPool);
 
             //pthread_exit(NULL);
-            pool-> threadExit( );
+            pool->threadExit();
         }
 
         // 从任务队列中取出一个任务
-        Task task=pool->taskQ->taskTask() ;
+        Task task = pool->taskQ->taskTask();
 
 
 
-     //    pthread_cond_signal(&pool->notFull);   // 唤醒生产者  生产者不会阻塞
+        //    pthread_cond_signal(&pool->notFull);   // 唤醒生产者  生产者不会阻塞
+
+
+        cout << "thread " << to_string(pthread_self()) << " start working --- \n";
 
         pthread_mutex_unlock(&pool->mutexPool);  // 解锁
 
 
-        printf("thread %ld start working --- \n", pthread_self());
         pthread_mutex_lock(&pool->mutexBusy);   // busyNumThreads 专用的互斥锁
         pool->busyNumThreads++;
         pthread_mutex_unlock(&pool->mutexBusy);
 
         task.functions(arg);    // 工作
-        free(task.arg);
-        task.arg = NULL;
+        delete task.arg;
+        task.arg = nullptr;
 
-        printf("thread %ld end working --- \n", pthread_self());
+        cout << "thread " << to_string(pthread_self()) << " end working --- \n";
 
         pthread_mutex_lock(&pool->mutexBusy);   // busyNumThreads 专用的互斥锁
         pool->busyNumThreads--;     // 工作结束后--
         pthread_mutex_unlock(&pool->mutexBusy);
     }
 
-    //  return NULL;
+    return NULL;
 
-    return nullptr;
+
+}
+
+
+
+
+void ThreadPool::addTask(Task task)
+{
+    pthread_mutex_lock(& mutexPool);
+
+    // 生产者 阻塞 当容量满了 并且 没有销毁线程池
+    while (pool->queueSize == pool->queueCapacity && !pool->shutdownThreadPool)
+    {
+
+        // 阻塞生产者线程
+        pthread_cond_wait(&pool->notFull, &pool->mutexPool);
+
+    }
+
+    if (pool->shutdownThreadPool)
+    {
+        pthread_mutex_unlock(&pool->mutexPool);
+        return;
+    }
+
+    // 添加任务
+    pool->taskQueue[pool->queueRear].functions = func;
+    pool->taskQueue[pool->queueRear].arg = arg;
+    pool->queueRear = (pool->queueRear + 1) % pool->queueCapacity;  // 环形队列
+    pool->queueSize++;
+
+
+    pthread_cond_signal(&pool->notEmpty);   // 唤醒消费者
+
+    pthread_mutex_unlock(&pool->mutexPool);
+
+
 }
 
 Task ThreadPool::takeTask()
 {
 
+
+
     return Task();
 }
+
+
+void ThreadPool::threadExit()
+{
+    pthread_t tid = pthread_self();
+
+    for (int i = 0; i < this->maxNumThreads; i++)
+    {
+        if (threadIDs[i] == tid)
+        {
+            threadIDs[i] = 0;
+            cout << "threadExit() called , " <<to_string(tid)  << " exiting --- \n";
+            break;
+        }
+    }
+
+    pthread_exit(NULL);  // 当前线程退出
+
+}
+

@@ -47,11 +47,12 @@ public:
 
 private:
 
-  static  void *worker(void *arg);
+    [[noreturn]] static  void *worker(void *arg);
 
    static void *manager(void *arg);
 
     void threadExit();
+
 
 
 private:
@@ -80,6 +81,7 @@ private:
     bool shutdownThreadPool; //true表示销毁线程
 
 
+    static const int NUMBER=2;
 
 
 };
