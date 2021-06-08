@@ -161,7 +161,7 @@ void *ThreadPool::worker(void *arg)
 
 
 
-     //    pthread_cond_signal(&pool->notFull);   // 唤醒生产者 
+     //    pthread_cond_signal(&pool->notFull);   // 唤醒生产者  生产者不会阻塞
 
         pthread_mutex_unlock(&pool->mutexPool);  // 解锁
 
