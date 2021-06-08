@@ -258,14 +258,7 @@ void ThreadPool::addTask(Task task)
 {
     pthread_mutex_lock(& mutexPool);
 
-    // 生产者 阻塞 当容量满了 并且 没有销毁线程池
-    while (pool->queueSize == pool->queueCapacity && !pool->shutdownThreadPool)
-    {
-
-        // 阻塞生产者线程
-        pthread_cond_wait(&pool->notFull, &pool->mutexPool);
-
-    }
+    
 
     if (pool->shutdownThreadPool)
     {
