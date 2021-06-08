@@ -258,24 +258,21 @@ void ThreadPool::addTask(Task task)
 {
     pthread_mutex_lock(& mutexPool);
 
-    
+
 
     if (pool->shutdownThreadPool)
     {
-        pthread_mutex_unlock(&pool->mutexPool);
+        pthread_mutex_unlock(& mutexPool);
         return;
     }
 
     // 添加任务
-    pool->taskQueue[pool->queueRear].functions = func;
-    pool->taskQueue[pool->queueRear].arg = arg;
-    pool->queueRear = (pool->queueRear + 1) % pool->queueCapacity;  // 环形队列
-    pool->queueSize++;
+    taskQ->addTask(task);
 
 
-    pthread_cond_signal(&pool->notEmpty);   // 唤醒消费者
+    pthread_cond_signal(& notEmpty);   // 唤醒消费者
 
-    pthread_mutex_unlock(&pool->mutexPool);
+    pthread_mutex_unlock(& mutexPool);
 
 
 }
