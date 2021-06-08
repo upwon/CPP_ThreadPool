@@ -1,0 +1,6 @@
+
+.git
+.idea
+cmake-build-debug
+cmake-build-debug-wsl
+cmake-build-release
