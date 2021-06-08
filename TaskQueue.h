@@ -14,6 +14,7 @@
 */
 //
 #include<queue>
+#include <pthread.h>
 
 using namespace std;
 
@@ -31,7 +32,7 @@ struct Task
         functions = nullptr;
         arg = nullptr;
     }
-    
+
     // 有参构造
     Task(callback f, void *arg)
     {
@@ -41,14 +42,35 @@ struct Task
 
     // void (*functions)(void *arg);
     callback functions;
-
-
     void *arg;
 };
 
 class TaskQueue
 {
-    queue<Task> m_taskQ;
+public:
+    TaskQueue();
+
+    ~TaskQueue();
+
+    // 添加任务
+    void addTask(Task task_);
+    void addTask(callback f,void * arg);
+
+    // 取出一个任务
+    Task taskTask();
+
+    // 获取当前任务的个数
+    inline int getTaskNumber()
+    {
+        return m_taskQ.size();
+    }
+
+
+private:
+    queue<Task> m_taskQ; // 动态的容器 队列
+
+    // 互斥锁
+    pthread_mutex_t m_mutex;
 
 
 };
