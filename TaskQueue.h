@@ -24,7 +24,7 @@ using namespace std;
 using callback = void (*)(void *arg);
 
 // 任务结构体
-
+ template<typename T>
 struct Task
 {
     // 无参构造
@@ -38,13 +38,15 @@ struct Task
     Task(callback f, void *arg)
     {
         this->functions = f;
-        this->arg = arg;
+        this->arg =(T*) arg;
     }
 
     // void (*functions)(void *arg);
     callback functions;
-    void *arg;
+    T *arg;
 };
+
+   template<typename T>
 
 class TaskQueue
 {
@@ -54,11 +56,11 @@ public:
     ~TaskQueue();
 
     // 添加任务
-    void addTask(Task task_);
+    void addTask(Task<T> task_);
     void addTask(callback f,void * arg);
 
     // 取出一个任务
-    Task taskTask();
+    Task<T> taskTask();
 
     // 获取当前任务的个数
     inline size_t getTaskNumber()
@@ -68,7 +70,7 @@ public:
 
 
 private:
-    queue<Task> m_taskQ; // 动态的容器 队列
+    queue<Task<T>> m_taskQ; // 动态的容器 队列
 
     // 互斥锁
     pthread_mutex_t m_mutex;

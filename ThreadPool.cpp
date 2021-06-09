@@ -21,12 +21,13 @@
 #include <unistd.h>
 
 using namespace std;
+template<typename T>
 
-ThreadPool::ThreadPool(int minNumThreads_, int maxNumThreads_)
+ThreadPool<T>::ThreadPool(int minNumThreads_, int maxNumThreads_)
 {
 
     // 实例化任务队列
-    taskQ = new TaskQueue;
+    taskQ = new TaskQueue<T>;
 
     if (taskQ == nullptr)
     {
@@ -99,7 +100,8 @@ ThreadPool::ThreadPool(int minNumThreads_, int maxNumThreads_)
 
 }
 
-void *ThreadPool::manager(void *arg)
+template<typename T>
+void *ThreadPool<T>::manager(void *arg)
 {
     ThreadPool *pool = static_cast<ThreadPool *>(arg)  ;
 
@@ -167,7 +169,8 @@ void *ThreadPool::manager(void *arg)
     return nullptr;
 }
 
-[[noreturn]] void *ThreadPool::worker(void *arg)
+template <typename T>
+[[noreturn]] void *ThreadPool<T>::worker(void *arg)
 {
     ThreadPool *pool = static_cast<ThreadPool *>(arg);
 
@@ -219,7 +222,7 @@ void *ThreadPool::manager(void *arg)
         }
 
         // 从任务队列中取出一个任务
-        Task task = pool->taskQ->taskTask();
+        Task<T> task = pool->taskQ->taskTask();
 
 
 
@@ -253,8 +256,8 @@ void *ThreadPool::manager(void *arg)
 
 
 
-
-void ThreadPool::addTask(Task task)
+template<typename T>
+void ThreadPool<T>::addTask(Task<T> task)
 {
   //  pthread_mutex_lock(& mutexPool);  queuue是线程安全
 
@@ -278,8 +281,8 @@ void ThreadPool::addTask(Task task)
 }
 
 
-
-void ThreadPool::threadExit()
+template<typename T>
+void ThreadPool<T>::threadExit()
 {
     pthread_t tid = pthread_self();
 
@@ -297,7 +300,8 @@ void ThreadPool::threadExit()
 
 }
 
-int ThreadPool::getWorkNum()
+template <typename T>
+int ThreadPool<T>::getWorkNum()
 {
     pthread_mutex_lock(& mutexPool);
     int workNum = liveNumThreads;   // 关闭线程
@@ -307,7 +311,9 @@ int ThreadPool::getWorkNum()
 
 }
 
-int ThreadPool::getLiveNum()
+template <typename T>
+
+int ThreadPool<T>::getLiveNum()
 {  pthread_mutex_lock(&  mutexBusy);
 
     int busyNum =   busyNumThreads;
@@ -316,7 +322,9 @@ int ThreadPool::getLiveNum()
     return busyNum;
 }
 
-ThreadPool::~ThreadPool()
+template <typename T>
+
+ThreadPool<T>::~ThreadPool()
 {
 
     pthread_mutex_lock(&  mutexPool);

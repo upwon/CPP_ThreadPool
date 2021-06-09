@@ -16,38 +16,45 @@
 
 #include "TaskQueue.h"
 
-TaskQueue::TaskQueue()
+
+template<typename T>
+TaskQueue<T>::TaskQueue()
 {
     pthread_mutex_init(&m_mutex, NULL);
 
 }
 
-TaskQueue::~TaskQueue()
+template<typename T>
+TaskQueue<T> ::~TaskQueue()
 {
     pthread_mutex_destroy(&m_mutex);
 
 }
 
-void TaskQueue::addTask(Task task_)
+template<typename T>
+
+void TaskQueue<T>::addTask(Task<T>  task_)
 {
     pthread_mutex_lock(&m_mutex);
     m_taskQ.push(task_);
     pthread_mutex_unlock(&m_mutex);
 
 }
+template<typename T>
 
-void TaskQueue::addTask(callback f, void *arg)
+void TaskQueue<T>::addTask(callback f, void *arg)
 {
 
     pthread_mutex_lock(&m_mutex);
-    m_taskQ.push(Task(f,arg));  // 包装后push
+    m_taskQ.push(Task<T>(f,arg));  // 包装后push
     pthread_mutex_unlock(&m_mutex);
 
 }
+template<typename T>
 
-Task TaskQueue::taskTask()
+Task<T> TaskQueue<T>::taskTask()
 {
-    Task t;
+    Task<T> t;
     if(!m_taskQ.empty())
     {
         t=m_taskQ.front();

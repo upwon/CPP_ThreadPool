@@ -19,6 +19,9 @@
 
 
 #include"TaskQueue.h"
+#include"TaskQueue.cpp"
+
+template<typename T>
 
 class ThreadPool
 {
@@ -34,7 +37,7 @@ public:
 
 
 // 给线程池添加任务
-    void addTask(Task task);
+    void addTask(Task<T> task);
 
 // 取出一个任务
 //  Task takeTask();
@@ -57,7 +60,7 @@ private:
 
 private:
     // 任务队列
-    TaskQueue *taskQ;
+    TaskQueue<T>  *taskQ;
 
     // 管理者线程与工作线程
     pthread_t threadManagerID;    // 管理者线程ID
