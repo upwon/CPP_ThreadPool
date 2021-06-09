@@ -24,7 +24,7 @@ using namespace std;
 using callback = void (*)(void *arg);
 
 // 任务结构体
- template<typename T>
+template<typename T>
 struct Task
 {
     // 无参构造
@@ -38,7 +38,7 @@ struct Task
     Task(callback f, void *arg)
     {
         this->functions = f;
-        this->arg =(T*) arg;
+        this->arg = (T *) arg;
     }
 
     // void (*functions)(void *arg);
@@ -46,7 +46,7 @@ struct Task
     T *arg;
 };
 
-   template<typename T>
+template<typename T>
 
 class TaskQueue
 {
@@ -57,7 +57,8 @@ public:
 
     // 添加任务
     void addTask(Task<T> task_);
-    void addTask(callback f,void * arg);
+
+    void addTask(callback f, void *arg);
 
     // 取出一个任务
     Task<T> taskTask();

@@ -29,7 +29,7 @@ public:
 
 
 // 创建线程池  构造函数
-    ThreadPool(int minNumThreads, int maxNumThreads_ );
+    ThreadPool(int minNumThreads, int maxNumThreads_);
 
 
 // 销毁线程池 析构函数
@@ -50,17 +50,16 @@ public:
 
 private:
 
-    [[noreturn]] static  void *worker(void *arg);
+    [[noreturn]] static void *worker(void *arg);
 
-   static void *manager(void *arg);
+    static void *manager(void *arg);
 
     void threadExit();
 
 
-
 private:
     // 任务队列
-    TaskQueue<T>  *taskQ;
+    TaskQueue<T> *taskQ;
 
     // 管理者线程与工作线程
     pthread_t threadManagerID;    // 管理者线程ID
@@ -77,14 +76,14 @@ private:
     pthread_mutex_t mutexBusy; //专用于锁busyNumThreads
 
     // 条件变量
- //   pthread_cond_t notFull; // 任务队列是不是满了
+    //   pthread_cond_t notFull; // 任务队列是不是满了
     pthread_cond_t notEmpty; // 任务队列是不是空了
 
     // 销毁线程标志
     bool shutdownThreadPool; //true表示销毁线程
 
 
-    static const int NUMBER=2;
+    static const int NUMBER = 2;
 
 
 };

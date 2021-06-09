@@ -21,6 +21,7 @@
 #include <unistd.h>
 
 using namespace std;
+
 template<typename T>
 
 ThreadPool<T>::ThreadPool(int minNumThreads_, int maxNumThreads_)
@@ -103,7 +104,7 @@ ThreadPool<T>::ThreadPool(int minNumThreads_, int maxNumThreads_)
 template<typename T>
 void *ThreadPool<T>::manager(void *arg)
 {
-    ThreadPool *pool = static_cast<ThreadPool *>(arg)  ;
+    ThreadPool *pool = static_cast<ThreadPool *>(arg);
 
     while (!pool->shutdownThreadPool)
     {
@@ -115,8 +116,8 @@ void *ThreadPool<T>::manager(void *arg)
         pthread_mutex_lock(&pool->mutexPool);
         int queueSize = pool->taskQ->getTaskNumber();
         int liveNum = pool->liveNumThreads;
-        int maxNumThreads=pool->maxNumThreads;
-        int minNumThreads=pool->minNumThreads;
+        int maxNumThreads = pool->maxNumThreads;
+        int minNumThreads = pool->minNumThreads;
         pthread_mutex_unlock(&pool->mutexPool);
 
         // 取出忙的线程的数量
@@ -134,7 +135,7 @@ void *ThreadPool<T>::manager(void *arg)
             {
                 if (pool->threadIDs[i] == 0)  // 找到空位 即 数组中空闲的位置
                 {
-                    pthread_create(& pool->threadIDs[i], NULL, worker, pool);
+                    pthread_create(&pool->threadIDs[i], NULL, worker, pool);
                     counter++;
                     pool->liveNumThreads++;
                 }
@@ -169,7 +170,7 @@ void *ThreadPool<T>::manager(void *arg)
     return nullptr;
 }
 
-template <typename T>
+template<typename T>
 [[noreturn]] void *ThreadPool<T>::worker(void *arg)
 {
     ThreadPool *pool = static_cast<ThreadPool *>(arg);
@@ -255,17 +256,16 @@ template <typename T>
 }
 
 
-
 template<typename T>
 void ThreadPool<T>::addTask(Task<T> task)
 {
-  //  pthread_mutex_lock(& mutexPool);  queuue是线程安全
+    //  pthread_mutex_lock(& mutexPool);  queuue是线程安全
 
 
 
     if (this->shutdownThreadPool)
     {
- //       pthread_mutex_unlock(& mutexPool);
+        //       pthread_mutex_unlock(& mutexPool);
         return;
     }
 
@@ -273,9 +273,9 @@ void ThreadPool<T>::addTask(Task<T> task)
     taskQ->addTask(task);
 
 
-    pthread_cond_signal(& notEmpty);   // 唤醒消费者
+    pthread_cond_signal(&notEmpty);   // 唤醒消费者
 
- //   pthread_mutex_unlock(& mutexPool);
+    //   pthread_mutex_unlock(& mutexPool);
 
 
 }
@@ -291,7 +291,7 @@ void ThreadPool<T>::threadExit()
         if (threadIDs[i] == tid)
         {
             threadIDs[i] = 0;
-            cout << "threadExit() called , " <<to_string(tid)  << " exiting --- \n";
+            cout << "threadExit() called , " << to_string(tid) << " exiting --- \n";
             break;
         }
     }
@@ -300,68 +300,68 @@ void ThreadPool<T>::threadExit()
 
 }
 
-template <typename T>
+template<typename T>
 int ThreadPool<T>::getWorkNum()
 {
-    pthread_mutex_lock(& mutexPool);
+    pthread_mutex_lock(&mutexPool);
     int workNum = liveNumThreads;   // 关闭线程
 
-    pthread_mutex_unlock(&  mutexPool);
+    pthread_mutex_unlock(&mutexPool);
     return workNum;
 
 }
 
-template <typename T>
+template<typename T>
 
 int ThreadPool<T>::getLiveNum()
-{  pthread_mutex_lock(&  mutexBusy);
+{
+    pthread_mutex_lock(&mutexBusy);
 
-    int busyNum =   busyNumThreads;
+    int busyNum = busyNumThreads;
 
-    pthread_mutex_unlock(&  mutexBusy);
+    pthread_mutex_unlock(&mutexBusy);
     return busyNum;
 }
 
-template <typename T>
+template<typename T>
 
 ThreadPool<T>::~ThreadPool()
 {
 
-    pthread_mutex_lock(&  mutexPool);
+    pthread_mutex_lock(&mutexPool);
     // 关闭线程池
-    shutdownThreadPool=true;
-    int liveNumThreads= liveNumThreads;
-    pthread_mutex_unlock(& mutexPool);
+    shutdownThreadPool = true;
+    int liveNumThreads = liveNumThreads;
+    pthread_mutex_unlock(&mutexPool);
 
 
     // 阻塞回收管理线程
-    pthread_join( threadManagerID, NULL);
+    pthread_join(threadManagerID, NULL);
 
     // 唤醒阻塞的消费者线程ID
-    for (int i = 0; i <  liveNumThreads; i++)
+    for (int i = 0; i < liveNumThreads; i++)
     {
-        pthread_cond_signal(& notEmpty);  // 唤醒阻塞在 notEmpty 的线程
+        pthread_cond_signal(&notEmpty);  // 唤醒阻塞在 notEmpty 的线程
     }
 
     // 释放堆区
-    if ( taskQ)
+    if (taskQ)
     {
         delete taskQ;
-        taskQ=nullptr;
+        taskQ = nullptr;
 
     }
-    if ( threadIDs)
+    if (threadIDs)
     {
-       delete [] threadIDs;
+        delete[] threadIDs;
 
     }
 
     // 释放互斥锁以及条件变量
-    pthread_mutex_destroy(& mutexPool);
-    pthread_mutex_destroy(& mutexBusy);
+    pthread_mutex_destroy(&mutexPool);
+    pthread_mutex_destroy(&mutexBusy);
 
-    pthread_cond_destroy(& notEmpty);
-
+    pthread_cond_destroy(&notEmpty);
 
 
 }

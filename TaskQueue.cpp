@@ -25,7 +25,7 @@ TaskQueue<T>::TaskQueue()
 }
 
 template<typename T>
-TaskQueue<T> ::~TaskQueue()
+TaskQueue<T>::~TaskQueue()
 {
     pthread_mutex_destroy(&m_mutex);
 
@@ -33,33 +33,35 @@ TaskQueue<T> ::~TaskQueue()
 
 template<typename T>
 
-void TaskQueue<T>::addTask(Task<T>  task_)
+void TaskQueue<T>::addTask(Task<T> task_)
 {
     pthread_mutex_lock(&m_mutex);
     m_taskQ.push(task_);
     pthread_mutex_unlock(&m_mutex);
 
 }
+
 template<typename T>
 
 void TaskQueue<T>::addTask(callback f, void *arg)
 {
 
     pthread_mutex_lock(&m_mutex);
-    m_taskQ.push(Task<T>(f,arg));  // 包装后push
+    m_taskQ.push(Task<T>(f, arg));  // 包装后push
     pthread_mutex_unlock(&m_mutex);
 
 }
+
 template<typename T>
 
 Task<T> TaskQueue<T>::taskTask()
 {
     Task<T> t;
-    if(!m_taskQ.empty())
+    if (!m_taskQ.empty())
     {
-        t=m_taskQ.front();
+        t = m_taskQ.front();
         m_taskQ.pop();
     }
-    return  t;
+    return t;
 }
 
