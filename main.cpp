@@ -15,9 +15,8 @@ void taskFunc(void *arg)
     sleep(1);
 }
 
-int main()
+int main(int argc, char **argv)
 {
-
     // 创建线程池
     ThreadPool<int> pool(3, 10);
 
@@ -25,18 +24,13 @@ int main()
     {
         int *num = new int(i + 100);
 
-
         pool.addTask(Task<int>(taskFunc, num));
 
     }
 
-    // free(num);
-
     sleep(30);  // 睡眠30秒
-
-
-
-    printf("-------exit---------------\n");
+    
+    cout<<"-------exit---------------\n";
 
     return 0;
 }
