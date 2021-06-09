@@ -24,6 +24,7 @@ using namespace std;
 using callback = void (*)(void *arg);
 
 // 任务结构体
+
 struct Task
 {
     // 无参构造
@@ -60,7 +61,7 @@ public:
     Task taskTask();
 
     // 获取当前任务的个数
-    inline int getTaskNumber()
+    inline size_t getTaskNumber()
     {
         return m_taskQ.size();
     }

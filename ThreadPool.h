@@ -37,7 +37,7 @@ public:
     void addTask(Task task);
 
 // 取出一个任务
-  Task takeTask();
+//  Task takeTask();
 
 // 获取线程池中的工作线程
     int getWorkNum();
@@ -74,7 +74,7 @@ private:
     pthread_mutex_t mutexBusy; //专用于锁busyNumThreads
 
     // 条件变量
-    pthread_cond_t notFull; // 任务队列是不是满了
+ //   pthread_cond_t notFull; // 任务队列是不是满了
     pthread_cond_t notEmpty; // 任务队列是不是空了
 
     // 销毁线程标志

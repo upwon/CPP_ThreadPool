@@ -59,7 +59,7 @@ ThreadPool::ThreadPool(int minNumThreads_, int maxNumThreads_)
 
         // 初始化互斥锁与条件量
         if (pthread_mutex_init(&mutexPool, NULL) != 0 || pthread_mutex_init(&mutexBusy, NULL) != 0 ||
-            pthread_cond_init(&notFull, NULL) != 0)
+            pthread_cond_init(&notEmpty, NULL) != 0)
         {
             cout << "mutex or pthread_cond  initialization failure \n";
             break;
@@ -235,7 +235,7 @@ void *ThreadPool::manager(void *arg)
         pool->busyNumThreads++;
         pthread_mutex_unlock(&pool->mutexBusy);
 
-        task.functions(arg);    // 工作
+        task.functions(task.arg);    // 工作
         delete task.arg;
         task.arg = nullptr;
 
@@ -256,13 +256,13 @@ void *ThreadPool::manager(void *arg)
 
 void ThreadPool::addTask(Task task)
 {
-    pthread_mutex_lock(& mutexPool);
+  //  pthread_mutex_lock(& mutexPool);  queuue是线程安全
 
 
 
-    if (pool->shutdownThreadPool)
+    if (this->shutdownThreadPool)
     {
-        pthread_mutex_unlock(& mutexPool);
+ //       pthread_mutex_unlock(& mutexPool);
         return;
     }
 
@@ -272,18 +272,11 @@ void ThreadPool::addTask(Task task)
 
     pthread_cond_signal(& notEmpty);   // 唤醒消费者
 
-    pthread_mutex_unlock(& mutexPool);
+ //   pthread_mutex_unlock(& mutexPool);
 
 
 }
 
-Task ThreadPool::takeTask()
-{
-
-
-
-    return Task();
-}
 
 
 void ThreadPool::threadExit()
@@ -301,6 +294,67 @@ void ThreadPool::threadExit()
     }
 
     pthread_exit(NULL);  // 当前线程退出
+
+}
+
+int ThreadPool::getWorkNum()
+{
+    pthread_mutex_lock(& mutexPool);
+    int workNum = liveNumThreads;   // 关闭线程
+
+    pthread_mutex_unlock(&  mutexPool);
+    return workNum;
+
+}
+
+int ThreadPool::getLiveNum()
+{  pthread_mutex_lock(&  mutexBusy);
+
+    int busyNum =   busyNumThreads;
+
+    pthread_mutex_unlock(&  mutexBusy);
+    return busyNum;
+}
+
+ThreadPool::~ThreadPool()
+{
+
+    pthread_mutex_lock(&  mutexPool);
+    // 关闭线程池
+    shutdownThreadPool=true;
+    int liveNumThreads= liveNumThreads;
+    pthread_mutex_unlock(& mutexPool);
+
+
+    // 阻塞回收管理线程
+    pthread_join( threadManagerID, NULL);
+
+    // 唤醒阻塞的消费者线程ID
+    for (int i = 0; i <  liveNumThreads; i++)
+    {
+        pthread_cond_signal(& notEmpty);  // 唤醒阻塞在 notEmpty 的线程
+    }
+
+    // 释放堆区
+    if ( taskQ)
+    {
+        delete taskQ;
+        taskQ=nullptr;
+
+    }
+    if ( threadIDs)
+    {
+       delete [] threadIDs;
+
+    }
+
+    // 释放互斥锁以及条件变量
+    pthread_mutex_destroy(& mutexPool);
+    pthread_mutex_destroy(& mutexBusy);
+
+    pthread_cond_destroy(& notEmpty);
+
+
 
 }
 
